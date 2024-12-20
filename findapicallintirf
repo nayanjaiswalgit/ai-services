@@ -1,0 +1,370 @@
+import os
+import json
+import re
+
+root_dir = "."  # Root directory to start searching from
+exclude = {"node_modules", ".git", "public", ".husky"}  # Directories to exclude
+search_text = "client.fetch"  # Text you want to search for inside the files
+
+# Store results in a list
+results = []
+
+# Regex pattern to match 'client.fetch' function calls and capture the arguments (queries)
+pattern = r'client\.fetch\(([^)]+)\)'  # This will capture the arguments inside the parentheses
+
+# Regex pattern to detect a function component name
+component_pattern = r'const\s+(\w+)\s*=\s*\(\)\s*=>|function\s+(\w+)\s*\('
+
+for root, dirs, files in os.walk(root_dir):
+    # Modify dirs in-place to stop walking into the excluded directories
+    dirs[:] = [d for d in dirs if d not in exclude]
+    
+    # Iterate over each file
+    for file in files:
+        file_path = os.path.join(root, file)
+        
+        # Only process JavaScript or JSX/TSX files (adjust file extensions as needed)
+        if file.endswith((".js", ".jsx", ".ts", ".tsx")):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    contents = f.read()
+
+                    # Find all occurrences of 'client.fetch' and capture its arguments
+                    matches = re.findall(pattern, contents)
+
+                    # Try to extract the component name from the file content
+                    component_match = re.search(component_pattern, contents)
+                    component_name = file.split('.')[0]  # Default component name is the file name without extension
+                    
+                    if component_match:
+                        # If a function-based component is found, use the captured name
+                        component_name = component_match.group(1) or component_match.group(2)
+
+                    # If there are matches for client.fetch, append them to results
+                    if matches:
+                        for match in matches:
+                            results.append({
+                                "path": file_path,
+                                "function": "client.fetch",
+                                "query": match.strip(),
+                                "component": component_name
+                            })
+
+            except Exception as e:
+                # Handle potential errors (e.g., encoding issues, permission issues)
+                print(f"Error reading {file_path}: {e}")
+
+# Output the results as a JSON string
+print(json.dumps(results, indent=2))
+
+
+
+# results = {
+#   "map": [
+#     {
+#       "path": "./src/components/AboutUs.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"about\" && key == \"ABOUT_TIFR_ALUMNI\"]"
+#     },
+#     {
+#       "path": "./src/components/AboutUs.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"otherMedia\" && key == \"ABOUT_IMG\"]"
+#     },
+#     {
+#       "path": "./src/components/AllCommitteeMembers.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"alumniCommitteeMedia\"]"
+#     },
+#     {
+#       "path": "./src/components/AlumniBenefit.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"about\" && key == \"ALUMNI_BENEFITS\"]"
+#     },
+#     {
+#       "path": "./src/components/AlumniCommitteeComponent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"alumniCommitteeMedia\"]"
+#     },
+#     {
+#       "path": "./src/components/AlumniCommitteeComponent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"alumniCommitteeMedia\"]"
+#     },
+#     {
+#       "path": "./src/components/AlumniContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"about\" && key == \"ALUMNI\"]"
+#     },
+#     {
+#       "path": "./src/components/AlumniImpact.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"about\" && key == \"ALUMNI_IMPACT\"]"
+#     },
+#     {
+#       "path": "./src/components/AppealContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"appeal\"]"
+#     },
+#     {
+#       "path": "./src/components/AppealFromPresident.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"homeContent\" && key == \"APPEAL_FROM_THE_PRESIDENT\"]"
+#     },
+#     {
+#       "path": "./src/components/Banner.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"otherMedia\" && key == \"HOME_IMG\"]"
+#     },
+#     {
+#       "path": "./src/components/Banner.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"homeContent\" && key == \"BANNER_CONTENT\"]"
+#     },
+#     {
+#       "path": "./src/components/Banner.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"homeContent\" && key == \"WELCOME_TEXT\"]"
+#     },
+#     {
+#       "path": "./src/components/BecomeAMemberComp.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"constitution\" && key == 4]"
+#     },
+#     {
+#       "path": "./src/components/CauseAndImpactContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"giving_back_content\" && key == \"CAUSES_AND_IMPACT\"]"
+#     },
+#     {
+#       "path": "./src/components/ConstitutionContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"constitution\"]"
+#     },
+#     {
+#       "path": "./src/components/ContactContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"contactUs\" && key == \"CONTACT_US\"]"
+#     },
+#     {
+#       "path": "./src/components/DegreeTable.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"degree_holders_document\"]"
+#     },
+#     {
+#       "path": "./src/components/DegreeTable_old.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"degree_holders_document\"]"
+#     },
+#     {
+#       "path": "./src/components/DisclaimerContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"disclaimer\"]"
+#     },
+#     {
+#       "path": "./src/components/EventsCurrentComponent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"institute_function_current_event\"]"
+#     },
+#     {
+#       "path": "./src/components/EventsCurrentLectureComponent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"tifraa_lecture_current_event\"]"
+#     },
+#     {
+#       "path": "./src/components/EventsDetailContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_id == \"${documentId}\"][0]"
+#     },
+#     {
+#       "path": "./src/components/EventsLecturesComponentMain.jsx",
+#       "function": "client.fetch",
+#       "query": "query"
+#     },
+#     {
+#       "path": "./src/components/EventsPastComponent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"institute_function_past_event\"]"
+#     },
+#     {
+#       "path": "./src/components/EventsPastLectureComponent .jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"tifraa_lecture_past_event\"]"
+#     },
+#     {
+#       "path": "./src/components/EventsReunionCurrentComponent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"reunion_current_event\"]"
+#     },
+#     {
+#       "path": "./src/components/EventsReunionMainPageComp.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"reunion_main_page\"]"
+#     },
+#     {
+#       "path": "./src/components/EventsReunionPastComponent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"reunion_past_event\"]"
+#     },
+#     {
+#       "path": "./src/components/ExecutiveCommittee.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"about\" && key == \"TAA_EXECUTIVE_COMMITTEE\"]"
+#     },
+#     {
+#       "path": "./src/components/FaqContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"FAQ\"]"
+#     },
+#     {
+#       "path": "./src/components/Footer.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"contactUs\" && key == \"CONTACT_US\"]"
+#     },
+#     {
+#       "path": "./src/components/GalleryCategory.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"gallery\"]"
+#     },
+#     {
+#       "path": "./src/components/GivingBackContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"giving_back_content\"]"
+#     },
+#     {
+#       "path": "./src/components/HeaderTop.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"contactUs\" && key == \"HOME_CONTACT\"]"
+#     },
+#     {
+#       "path": "./src/components/InstituteComp.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"about\" && key == \"INSTITUTE\"]"
+#     },
+#     {
+#       "path": "./src/components/LandmarkContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"landmark\"]"
+#     },
+#     {
+#       "path": "./src/components/MakeGiftContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"giving_back_content\" && key == \"MAKE_GIFT\"]"
+#     },
+#     {
+#       "path": "./src/components/NewGalleryContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"newGallery\"]{..., thumbnail->}"
+#     },
+#     {
+#       "path": "./src/components/News2ColumnContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"dailyNews\"]"
+#     },
+#     {
+#       "path": "./src/components/NewsletterContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"news\" && key == \"NEWSLETTERS\"]"
+#     },
+#     {
+#       "path": "./src/components/NewsTicker.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"news\"]"
+#     },
+#     {
+#       "path": "./src/components/PrivacyAndUsageContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"privacy_usage\"]"
+#     },
+#     {
+#       "path": "./src/components/Testimonial.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"otherMedia\" && key == \"50_YEARS_BANNER\"]"
+#     },
+#     {
+#       "path": "./src/components/VolunteerOpportunitiesContent.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"volunteerOpportunities\" && key == \"VOLUNTEER_OPPORTUNITIES\"]"
+#     },
+#     {
+#       "path": "./src/components/Admin_Portal/PendingNewsletters/SendPendingNewsletterEmailsComp.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"news\" && key == \"NEWSLETTERS\" && notifiedByEmail==false]"
+#     },
+#     {
+#       "path": "./src/components/Fifty_Years_of_TIFR/ContactUs.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"fifty_years_tifr_graduate_school\" && key == \"3\"]"
+#     },
+#     {
+#       "path": "./src/components/Fifty_Years_of_TIFR/NonHeadingText.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"fifty_years_tifr_graduate_school\" && key == \"1\"]"
+#     },
+#     {
+#       "path": "./src/components/Fifty_Years_of_TIFR/OrganizingCommittee.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"fifty_years_tifr_graduate_school\" && key == \"4\"]"
+#     },
+#     {
+#       "path": "./src/components/Fifty_Years_of_TIFR/PhotoGallery50Years.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"fifty_years_tifr_graduate_school\" && key == \"2\"]"
+#     },
+#     {
+#       "path": "./src/components/Fifty_Years_of_TIFR/PhotoGallery50Years.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"newGallery\" && _id == $categoryId]{..., images[]->{_id, title, \"imageUrl\": image.asset->url}}",
+#       "params": "{ categoryId }"
+#     },
+#     {
+#       "path": "./src/pages/GalleryDetails.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"newGallery\" && _id == $categoryId]{..., images[]->{_id, title, \"imageUrl\": image.asset->url}}",
+#       "params": "{ categoryId }"
+#     },
+#     {
+#       "path": "./src/pages/GalleryListPage.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"gallery\"]"
+#     },
+#     {
+#       "path": "./src/pages/GalleryListPage.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"gallery\" && category == \"${category}\"]"
+#     },
+#     {
+#       "path": "./src/pages/NewsDetails.jsx",
+#       "function": "client.fetch",
+#       "query": "*[_type == \"dailyNews\" && _id == $newsId]",
+#       "params": "{ newsId }"
+#     }
+#   ]
+# }
+
+#  function parseQuery(query) {
+#   // Regular expression to match key-value pairs inside the query
+#   const regex = /\[([^\]]+)\]/g;
+#   let keys = [];
+#   let data = {};
+
+#   // Extracting the part inside the square brackets
+#   const matches = query.match(regex);
+#   if (matches) {
+#     // Process each match inside the square brackets
+#     matches.forEach(match => {
+#       const keyValuePairs = match.slice(1, -1).split('&&'); // Split by '&&' if there are multiple conditions
+#       keyValuePairs.forEach(pair => {
+#         const [key, value] = pair.trim().split('==').map(item => item.trim().replace(/"/g, ''));
+#         keys.push(key);
+#         data[key] = value;
+#       });
+#     });
+#   }
+
+#   // Serialize the output in the desired format
+#   return {
+#     query: keys,
+#     data: data
+#   };
+# }
